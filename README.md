@@ -7,7 +7,7 @@ The game is ran by running "cargo run" in terminal. The game is played by taking
 attempting to use bevy_testing broke the program. The program works as desired. Some issues that I came across came from bevy being a lot harder to understand than initially expected, especially since there were more resources from older versions that had functionality that wouldn't work with bevy 0.15.0. bevy_rapier also broke code when trying to implement collisions between the keeper and the ball. There was one cargo clippy error that I wasn't able to resolve where it recommended to simplify the ParamSet that was input to shot_selection(). Future work would be to successfully implement the keeper+ball collision system and to find a way to make bevy_testing work. Future work might include refactoring to an older version of bevy.
 
 (green-grass-background.png and
-ball.png are designed by freepic 
+ball.png are designed by freepik 
 https://www.freepik.com/)
 
 ![Initial State](initial_state.png)
