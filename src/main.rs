@@ -1,5 +1,4 @@
 use bevy::{color::palettes::css::*, prelude::*, window::WindowResolution};
-
 use std::path::Path;
 
 ///
@@ -35,6 +34,8 @@ fn main() {
         .add_systems(Update, shot_selection)
         .run();
 }
+
+// components to allow functionality for arrow, powerbar, and ball
 #[derive(Component, Debug)]
 enum Direction {
     Up,
@@ -84,6 +85,7 @@ fn setup(
         Transform::from_xyz(0.0, 0.0, -100.0),
     ));
 
+    // create goalposts and crossbar
     let post_width = 7.0;
     let post_length = 250.0;
     let crossbar_length = 550.0;
@@ -112,7 +114,7 @@ fn setup(
     ));
 
     // https://bevy-cheatbook.github.io/fundamentals/transforms.html
-    //     rotation
+    //     rotation on crossbar
     commands.spawn((
         Mesh2d(posts[1].clone()),
         MeshMaterial2d(materials.add(Color::WHITE)),
@@ -141,7 +143,7 @@ fn setup(
     ));
 
     // https://bevy-cheatbook.github.io/fundamentals/transforms.html
-    //     rotation
+    //     rotation on crossbar outline
     commands.spawn((
         Mesh2d(post_outlines[1].clone()),
         MeshMaterial2d(materials.add(Color::BLACK)),
@@ -176,7 +178,7 @@ fn setup(
         Ball::Stop,
     ));
 
-    // add oscilating triangle and rectangle to make an arrow in front of ball
+    // add bouncing triangle and rectangle to make an arrow in front of ball
 
     let rectangle_width = 20.0;
     let rectangle_size = 250.0;
@@ -208,6 +210,7 @@ fn setup(
         ));
     });
 
+    // add powerbar
     let bar = meshes.add(Rectangle::new(rectangle_width * 2.0, 850.0));
     commands.spawn((
         Mesh2d(bar),
@@ -225,6 +228,7 @@ fn setup(
     ));
 }
 
+// resources to store user decisions and to allow order of game decisions
 #[derive(Resource)]
 struct XShot {
     x: f32,
@@ -247,6 +251,7 @@ struct Power {
 
 // https://bevyengine.org/examples/2d-rendering/move-sprite/
 
+// cargo clippy error i wasnt able to fix was the ParamSet
 fn shot_selection(
     time: Res<Time>,
     mut commands: Commands,
@@ -263,6 +268,7 @@ fn shot_selection(
     let x_range = 400.0;
     let y_range = 300.0;
 
+    // handle the arrow's movements
     for (mut arrow, mut transform) in &mut queries.p0().iter_mut() {
         match *arrow {
             Direction::Left => transform.translation.x -= x_range * 3.5 * time.delta_secs(),
@@ -272,41 +278,38 @@ fn shot_selection(
             Direction::Stop => {}
         }
 
-        if x.first_choice != true && input.just_pressed(KeyCode::KeyX) {
+        if !x.first_choice && input.just_pressed(KeyCode::KeyX) {
             x.first_choice = true;
             x.x = transform.translation.x;
             *arrow = Direction::Stop;
             *arrow = Direction::Up;
-        } else if x.first_choice == true
-            && y.second_choice != true
-            && input.just_pressed(KeyCode::KeyY)
-        {
+        } else if x.first_choice && !y.second_choice && input.just_pressed(KeyCode::KeyY) {
             y.second_choice = true;
             y.y = transform.translation.y;
             *arrow = Direction::Stop;
         }
 
-        if transform.translation.x > x_range && x.first_choice != true {
+        if transform.translation.x > x_range && !x.first_choice {
             *arrow = Direction::Left;
-        } else if transform.translation.x < -x_range && x.first_choice != true {
+        } else if transform.translation.x < -x_range && !x.first_choice {
             *arrow = Direction::Right;
         }
 
-        if transform.translation.y > y_range && y.second_choice != true {
+        if transform.translation.y > y_range && !y.second_choice {
             *arrow = Direction::Up;
-        } else if transform.translation.y < -y_range && y.second_choice != true {
+        } else if transform.translation.y < -y_range && !y.second_choice {
             *arrow = Direction::Down;
         }
 
-        if x.first_choice == true && y.second_choice == true {
+        if x.first_choice && y.second_choice {
             *arrow = Direction::Stop;
             power.active = true;
         }
     }
     // if shot direction is picked, we can now pick shot power
-    // https://bevyengine.org/examples/transforms/scale/
 
     if power.active {
+        // handle powerball actions
         for (mut bar, mut transform) in &mut queries.p1().iter_mut() {
             match *bar {
                 BarDirection::Up => transform.translation.y += x_range * 3.0 * time.delta_secs(),
@@ -335,7 +338,9 @@ fn shot_selection(
         }
     }
 
+    // calculate shot to be taken, and take it
     if power.shot_taken {
+        // increase values to be above the negative initial values
         let shot_y = y.y + 300.0;
         let shot_z = power.power + 450.0;
 
@@ -351,6 +356,7 @@ fn shot_selection(
 
         let dest = Vec2::new(x.x, yz);
 
+        // handle ball movements
         for (mut ball, mut transform) in queries.p2().iter_mut() {
             match *ball {
                 Ball::Move => {
@@ -398,7 +404,7 @@ fn shot_selection(
                             ..Default::default()
                         },
                     ));
-                } else if transform.translation.y < 380.5
+                } else if transform.translation.y < 287.5
                     && transform.translation.y > 50.0
                     && transform.translation.x > -251.0
                     && transform.translation.x < 252.0
@@ -422,8 +428,7 @@ fn shot_selection(
                             ..Default::default()
                         },
                     ));
-                }
-                else{
+                } else {
                     commands.spawn((Sprite::from_color(Color::BLACK, Vec2::new(300.0, 50.0)),));
                     commands.spawn((
                         Text2d::new("Hit Post!"),
